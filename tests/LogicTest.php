@@ -196,3 +196,23 @@ CTGTest::init('composed predicates in pipeline')
     ->stage('execute', fn($pipeline) => $pipeline($GLOBALS['logic_users']))
     ->assert('eligible names', fn($r) => $r, ['Alice', 'Charlie'])
     ->start(null, $config);
+
+// ── Edge case: vacuous either/all ──────────────────────────────
+
+CTGTest::init('either — zero predicates returns false')
+    ->stage('build', fn($_) => CTGFnprog::either())
+    ->assert('always false', fn($fn) => $fn('anything'), false)
+    ->start(null, $config);
+
+CTGTest::init('all — zero predicates returns true')
+    ->stage('build', fn($_) => CTGFnprog::all())
+    ->assert('always true', fn($fn) => $fn('anything'), true)
+    ->start(null, $config);
+
+// ── Edge case: cond with empty pairs ───────────────────────────
+
+CTGTest::init('cond — empty pairs returns null')
+    ->stage('build', fn($_) => CTGFnprog::cond([]))
+    ->stage('execute', fn($fn) => $fn('anything'))
+    ->assert('returns null', fn($r) => $r, null)
+    ->start(null, $config);

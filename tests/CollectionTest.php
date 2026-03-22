@@ -19,6 +19,8 @@ $users = [
     ['id' => 5, 'name' => 'Eve', 'email' => 'eve@test.com', 'role' => 'editor', 'active' => false, 'age' => 22],
 ];
 
+$GLOBALS['users'] = $users;
+
 // ── pluck ───────────────────────────────────────────────────────
 
 CTGTest::init('pluck — extracts single field')
@@ -344,5 +346,113 @@ CTGTest::init('zip — unequal lengths uses shortest')
     ->assert('only 2 pairs', fn($r) => count($r), 2)
     ->start(null, $config);
 
-// Make test data available globally for test closures
-$GLOBALS['users'] = $users;
+// ── Edge case: missing keys ────────────────────────────────────
+
+CTGTest::init('pluck — missing key returns null')
+    ->stage('data', fn($_) => [
+        ['id' => 1, 'name' => 'Alice'],
+        ['id' => 2],
+        ['id' => 3, 'name' => 'Charlie'],
+    ])
+    ->stage('execute', fn($data) => CTGFnprog::pluck('name')($data))
+    ->assert('returns null for missing', fn($r) => $r, ['Alice', null, 'Charlie'])
+    ->start(null, $config);
+
+CTGTest::init('keyBy — missing key groups under empty string')
+    ->stage('data', fn($_) => [
+        ['id' => 1, 'role' => 'admin'],
+        ['id' => 2],
+    ])
+    ->stage('execute', fn($data) => CTGFnprog::keyBy('role')($data))
+    ->assert('admin keyed', fn($r) => $r['admin']['id'], 1)
+    ->assert('missing keyed under empty', fn($r) => $r['']['id'], 2)
+    ->start(null, $config);
+
+CTGTest::init('groupBy — missing key groups under empty string')
+    ->stage('data', fn($_) => [
+        ['id' => 1, 'role' => 'admin'],
+        ['id' => 2],
+        ['id' => 3, 'role' => 'admin'],
+    ])
+    ->stage('execute', fn($data) => CTGFnprog::groupBy('role')($data))
+    ->assert('admin group has 2', fn($r) => count($r['admin']), 2)
+    ->assert('missing group has 1', fn($r) => count($r['']), 1)
+    ->start(null, $config);
+
+CTGTest::init('sortBy — missing key does not crash')
+    ->stage('data', fn($_) => [
+        ['id' => 1, 'score' => 50],
+        ['id' => 2],
+        ['id' => 3, 'score' => 30],
+    ])
+    ->stage('execute', fn($data) => CTGFnprog::sortBy('score')($data))
+    ->assert('returns 3 rows', fn($r) => count($r), 3)
+    ->assert('null sorts first', fn($r) => $r[0]['id'], 2)
+    ->start(null, $config);
+
+CTGTest::init('uniqueBy — missing key treated as null')
+    ->stage('data', fn($_) => [
+        ['id' => 1],
+        ['id' => 2],
+        ['id' => 3, 'role' => 'admin'],
+    ])
+    ->stage('execute', fn($data) => CTGFnprog::uniqueBy('role')($data))
+    ->assert('keeps first null and first admin', fn($r) => count($r), 2)
+    ->assert('first is id 1', fn($r) => $r[0]['id'], 1)
+    ->assert('second is id 3', fn($r) => $r[1]['id'], 3)
+    ->start(null, $config);
+
+CTGTest::init('where — missing key does not crash')
+    ->stage('data', fn($_) => [
+        ['id' => 1, 'role' => 'admin'],
+        ['id' => 2],
+        ['id' => 3, 'role' => 'admin'],
+    ])
+    ->stage('execute', fn($data) => CTGFnprog::where('role', 'admin')($data))
+    ->assert('returns 2 admins', fn($r) => count($r), 2)
+    ->start(null, $config);
+
+CTGTest::init('castField — missing key skips row')
+    ->stage('data', fn($_) => [
+        ['id' => '1', 'name' => 'Alice'],
+        ['name' => 'Bob'],
+    ])
+    ->stage('execute', fn($data) => CTGFnprog::castField('id', 'int')($data))
+    ->assert('first row cast', fn($r) => $r[0]['id'], 1)
+    ->assert('second row unchanged', fn($r) => array_key_exists('id', $r[1]), false)
+    ->start(null, $config);
+
+// ── Edge case: zip with non-sequential keys ────────────────────
+
+CTGTest::init('zip — handles non-sequential keys')
+    ->stage('data', fn($_) => [10 => 'x', 20 => 'y', 30 => 'z'])
+    ->stage('execute', fn($data) => CTGFnprog::zip($data)([1, 2, 3]))
+    ->assert('first pair', fn($r) => $r[0], [1, 'x'])
+    ->assert('second pair', fn($r) => $r[1], [2, 'y'])
+    ->assert('third pair', fn($r) => $r[2], [3, 'z'])
+    ->start(null, $config);
+
+// ── Edge case: chunk(0) ────────────────────────────────────────
+
+CTGTest::init('chunk — zero size returns empty')
+    ->stage('execute', fn($_) => CTGFnprog::chunk(0)([1, 2, 3]))
+    ->assert('returns empty', fn($r) => $r, [])
+    ->start(null, $config);
+
+CTGTest::init('chunk — negative size returns empty')
+    ->stage('execute', fn($_) => CTGFnprog::chunk(-1)([1, 2, 3]))
+    ->assert('returns empty', fn($r) => $r, [])
+    ->start(null, $config);
+
+// ── Edge case: negative take/skip ──────────────────────────────
+
+CTGTest::init('take — negative returns empty')
+    ->stage('execute', fn($_) => CTGFnprog::take(-3)($GLOBALS['users']))
+    ->assert('returns empty', fn($r) => $r, [])
+    ->start(null, $config);
+
+CTGTest::init('skip — negative skips nothing')
+    ->stage('execute', fn($_) => CTGFnprog::skip(-3)($GLOBALS['users']))
+    ->assert('returns all', fn($r) => count($r), 5)
+    ->start(null, $config);
+

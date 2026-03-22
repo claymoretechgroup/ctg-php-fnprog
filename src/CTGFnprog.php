@@ -70,7 +70,7 @@ final class CTGFnprog {
     // Extract a single field value from each row
     public static function pluck(string $key): callable {
         return function(array $rows) use ($key): array {
-            return array_map(fn($row) => $row[$key], $rows);
+            return array_map(fn($row) => $row[$key] ?? null, $rows);
         };
     }
 
@@ -109,7 +109,7 @@ final class CTGFnprog {
         return function(array $rows) use ($key): array {
             $result = [];
             foreach ($rows as $row) {
-                $result[$row[$key]] = $row;
+                $result[$row[$key] ?? ''] = $row;
             }
             return $result;
         };
@@ -121,7 +121,7 @@ final class CTGFnprog {
         return function(array $rows) use ($key): array {
             $result = [];
             foreach ($rows as $row) {
-                $result[$row[$key]][] = $row;
+                $result[$row[$key] ?? ''][] = $row;
             }
             return $result;
         };
@@ -132,7 +132,7 @@ final class CTGFnprog {
     public static function sortBy(string $key, string $dir = 'ASC'): callable {
         return function(array $rows) use ($key, $dir): array {
             usort($rows, function($a, $b) use ($key, $dir) {
-                $cmp = $a[$key] <=> $b[$key];
+                $cmp = ($a[$key] ?? null) <=> ($b[$key] ?? null);
                 return strtoupper($dir) === 'DESC' ? -$cmp : $cmp;
             });
             return $rows;
@@ -146,7 +146,7 @@ final class CTGFnprog {
             $seen = [];
             $result = [];
             foreach ($rows as $row) {
-                $val = $row[$key];
+                $val = $row[$key] ?? null;
                 if (!in_array($val, $seen, true)) {
                     $seen[] = $val;
                     $result[] = $row;
@@ -178,7 +178,7 @@ final class CTGFnprog {
     // Keep rows where a field strictly equals a value
     public static function where(string $key, mixed $value): callable {
         return function(array $rows) use ($key, $value): array {
-            return array_values(array_filter($rows, fn($row) => $row[$key] === $value));
+            return array_values(array_filter($rows, fn($row) => ($row[$key] ?? null) === $value));
         };
     }
 
@@ -202,7 +202,7 @@ final class CTGFnprog {
     // Take the first N elements
     public static function take(int $n): callable {
         return function(array $rows) use ($n): array {
-            return array_slice($rows, 0, $n);
+            return array_slice($rows, 0, max(0, $n));
         };
     }
 
@@ -210,7 +210,7 @@ final class CTGFnprog {
     // Skip the first N elements
     public static function skip(int $n): callable {
         return function(array $rows) use ($n): array {
-            return array_values(array_slice($rows, $n));
+            return array_values(array_slice($rows, max(0, $n)));
         };
     }
 
@@ -264,6 +264,9 @@ final class CTGFnprog {
     public static function castField(string $key, string $type): callable {
         return function(array $rows) use ($key, $type): array {
             return array_map(function($row) use ($key, $type) {
+                if (!array_key_exists($key, $row)) {
+                    return $row;
+                }
                 $row[$key] = match($type) {
                     'int', 'integer' => (int) $row[$key],
                     'float', 'double' => (float) $row[$key],
@@ -280,6 +283,9 @@ final class CTGFnprog {
     // Split array into groups of N elements
     public static function chunk(int $size): callable {
         return function(array $rows) use ($size): array {
+            if ($size <= 0) {
+                return [];
+            }
             return array_chunk($rows, $size);
         };
     }
@@ -288,7 +294,7 @@ final class CTGFnprog {
     // Combine multiple arrays element-wise
     public static function zip(array ...$arrays): callable {
         return function(array $first) use ($arrays): array {
-            $all = array_merge([$first], $arrays);
+            $all = array_map('array_values', array_merge([$first], $arrays));
             $len = min(array_map('count', $all));
             $result = [];
             for ($i = 0; $i < $len; $i++) {
