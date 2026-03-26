@@ -326,10 +326,10 @@ final class CTGFnprog {
     // Average a numeric field across all rows
     public static function avg(string $key): callable {
         return function(array $rows) use ($key): int|float {
-            if (empty($rows)) {
+            $values = array_column($rows, $key);
+            if (empty($values)) {
                 return 0;
             }
-            $values = array_column($rows, $key);
             return array_sum($values) / count($values);
         };
     }
@@ -338,10 +338,11 @@ final class CTGFnprog {
     // Find minimum value of a numeric field
     public static function min(string $key): callable {
         return function(array $rows) use ($key): int|float|null {
-            if (empty($rows)) {
+            $values = array_column($rows, $key);
+            if (empty($values)) {
                 return null;
             }
-            return min(array_column($rows, $key));
+            return min($values);
         };
     }
 
@@ -349,10 +350,11 @@ final class CTGFnprog {
     // Find maximum value of a numeric field
     public static function max(string $key): callable {
         return function(array $rows) use ($key): int|float|null {
-            if (empty($rows)) {
+            $values = array_column($rows, $key);
+            if (empty($values)) {
                 return null;
             }
-            return max(array_column($rows, $key));
+            return max($values);
         };
     }
 

@@ -198,6 +198,40 @@ CTGTest::init('max — rows missing key are skipped')
     ->assert('max of rows with key', fn($r) => $r, 20)
     ->start(null, $config);
 
+// ── Conformance: all rows missing key ────────────────────────────
+
+CTGTest::init('sum — all rows missing key returns 0')
+    ->stage('execute', fn($_) => CTGFnprog::sum('price')([
+        ['name' => 'a'],
+        ['name' => 'b'],
+    ]))
+    ->assert('returns 0', fn($r) => $r, 0)
+    ->start(null, $config);
+
+CTGTest::init('avg — all rows missing key returns 0')
+    ->stage('execute', fn($_) => CTGFnprog::avg('price')([
+        ['name' => 'a'],
+        ['name' => 'b'],
+    ]))
+    ->assert('returns 0', fn($r) => $r, 0)
+    ->start(null, $config);
+
+CTGTest::init('min — all rows missing key returns null')
+    ->stage('execute', fn($_) => CTGFnprog::min('price')([
+        ['name' => 'a'],
+        ['name' => 'b'],
+    ]))
+    ->assert('returns null', fn($r) => $r, null)
+    ->start(null, $config);
+
+CTGTest::init('max — all rows missing key returns null')
+    ->stage('execute', fn($_) => CTGFnprog::max('price')([
+        ['name' => 'a'],
+        ['name' => 'b'],
+    ]))
+    ->assert('returns null', fn($r) => $r, null)
+    ->start(null, $config);
+
 // ── pipeline integration ────────────────────────────────────────
 
 CTGTest::init('aggregation in pipeline — filter then sum')

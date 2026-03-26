@@ -243,8 +243,6 @@ public static function coalesce(mixed ...$values): mixed;
 ctg-php-fnprog/
 ├── .gitignore
 ├── composer.json
-├── plans/
-│   └── implementation-plan.md
 ├── src/
 │   └── CTGFnprog.php
 ├── tests/
