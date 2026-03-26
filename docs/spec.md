@@ -152,12 +152,12 @@ public static function sum(string $key): callable;
 // Average a numeric field across all rows
 public static function avg(string $key): callable;
 
-// :: STRING -> ([ARRAY] -> INT|FLOAT)
-// Find minimum value of a numeric field
+// :: STRING -> ([ARRAY] -> INT|FLOAT|NULL)
+// Find minimum value of a numeric field. Empty list returns null.
 public static function min(string $key): callable;
 
-// :: STRING -> ([ARRAY] -> INT|FLOAT)
-// Find maximum value of a numeric field
+// :: STRING -> ([ARRAY] -> INT|FLOAT|NULL)
+// Find maximum value of a numeric field. Empty list returns null.
 public static function max(string $key): callable;
 
 // :: VOID -> ([ARRAY] -> INT)
@@ -308,7 +308,8 @@ Tests organized by method group:
 - `coalesce()` is the only method that breaks the "returns a callable" rule —
   it returns a value directly. This is intentional per the spec since it operates
   on its arguments, not on piped input.
-- `filter`/`reject`/`map`/`each` reset array keys using `array_values()` to
-  maintain clean sequential indexing.
+- `filter`, `reject`, and `skip` reset array keys using `array_values()`
+  to maintain clean sequential indexing. `map` and `each` preserve
+  original keys.
 - `sortBy` uses `usort` with spaceship operator for clean comparison.
 - `curry` uses `ReflectionFunction` to determine parameter count.

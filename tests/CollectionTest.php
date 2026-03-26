@@ -456,3 +456,60 @@ CTGTest::init('skip — negative skips nothing')
     ->assert('returns all', fn($r) => count($r), 5)
     ->start(null, $config);
 
+// ── Conformance: strict comparison ──────────────────────────────
+
+CTGTest::init('uniqueBy — strict comparison (int vs string)')
+    ->stage('execute', fn($_) => CTGFnprog::uniqueBy('x')([
+        ['x' => 1, 'label' => 'int'],
+        ['x' => '1', 'label' => 'string'],
+    ]))
+    ->assert('keeps both (1 !== "1")', fn($r) => count($r), 2)
+    ->assert('first is int', fn($r) => $r[0]['label'], 'int')
+    ->assert('second is string', fn($r) => $r[1]['label'], 'string')
+    ->start(null, $config);
+
+CTGTest::init('where — strict comparison (int vs string)')
+    ->stage('execute', fn($_) => CTGFnprog::where('n', 1)([
+        ['n' => 1, 'label' => 'int'],
+        ['n' => '1', 'label' => 'string'],
+    ]))
+    ->assert('only strict match', fn($r) => count($r), 1)
+    ->assert('matched int', fn($r) => $r[0]['label'], 'int')
+    ->start(null, $config);
+
+// ── Conformance: flatten mixed scalar+array ─────────────────────
+
+CTGTest::init('flatten — mixed scalar and array elements')
+    ->stage('execute', fn($_) => CTGFnprog::flatten()([[1, 2], 3, [4]]))
+    ->assert('flattened', fn($r) => $r, [1, 2, 3, 4])
+    ->start(null, $config);
+
+// ── Conformance: castField unknown type ─────────────────────────
+
+CTGTest::init('castField — unknown type passes through unchanged')
+    ->stage('execute', fn($_) => CTGFnprog::castField('n', 'unknown')([
+        ['n' => 42],
+    ]))
+    ->assert('value unchanged', fn($r) => $r[0]['n'], 42)
+    ->start(null, $config);
+
+// ── Conformance: sortBy case-insensitive direction ──────────────
+
+CTGTest::init('sortBy — lowercase desc works')
+    ->stage('execute', fn($_) => CTGFnprog::sortBy('age', 'desc')($GLOBALS['users']))
+    ->assert('first is oldest', fn($r) => $r[0]['name'], 'Charlie')
+    ->assert('last is youngest', fn($r) => $r[4]['name'], 'Eve')
+    ->start(null, $config);
+
+// ── Conformance: pipeline integration ───────────────────────────
+
+CTGTest::init('pipeline — filter, sort, pluck, take')
+    ->stage('execute', fn($_) => CTGFnprog::pipe([
+        CTGFnprog::filter(fn($u) => $u['active']),
+        CTGFnprog::sortBy('name'),
+        CTGFnprog::pluck('name'),
+        CTGFnprog::take(3),
+    ])($GLOBALS['users']))
+    ->assert('result', fn($r) => $r, ['Alice', 'Charlie', 'Diana'])
+    ->start(null, $config);
+
