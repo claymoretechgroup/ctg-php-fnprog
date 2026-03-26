@@ -1,5 +1,6 @@
 {
     "name": "ctg/php-fnprog",
+    "version": "1.0.0",
     "description": "Functional programming primitives for PHP — composable, pipeline-friendly operations",
     "type": "library",
     "license": "MIT",
