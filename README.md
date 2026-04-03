@@ -19,6 +19,18 @@ dependency across the CTG library ecosystem.
 
 ## Install
 
+Add the GitHub repository to your `composer.json`:
+
+```json
+{
+    "repositories": [
+        { "type": "vcs", "url": "https://github.com/claymoretechgroup/ctg-php-fnprog" }
+    ]
+}
+```
+
+Then require the package:
+
 ```
 composer require ctg/php-fnprog
 ```
